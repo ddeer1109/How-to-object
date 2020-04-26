@@ -1,3 +1,9 @@
+"""Nie bardzo wiedziałem co mam dać jako argumenty do funkcj + i -. 
+Na początku chciałem, żeby odpowiednio te operacje dodawały, bądź usuwały z listy obiektów tego typu kolejny obiekt,
+ale się zawiesiłem na tym troche i poszedłem po najmniejszej linii oporu. 
+Taki koncept chyba najlepiej by było rozdzielić na dwie klasy tj. jedna to klasa obiektu, 
+a druga klasa listy takich obiektów i dopiero w niej dodać metody + i - powiązane odpowiednio z list.append i del list[i], mam racje?"""
+
 class Task:
     """Nowa klasa na potrzeby nauki"""
     def __init__(self, id, name, state):
