@@ -1,60 +1,55 @@
-"""Nie bardzo wiedziałem co mam dać jako argumenty do funkcj + i -. 
-Na początku chciałem, żeby odpowiednio te operacje dodawały, bądź usuwały z listy obiektów tego typu kolejny obiekt,
-ale się zawiesiłem na tym troche i poszedłem po najmniejszej linii oporu. 
-Taki koncept chyba najlepiej by było rozdzielić na dwie klasy tj. jedna to klasa obiektu, 
-a druga klasa listy takich obiektów i dopiero w niej dodać metody + i - powiązane odpowiednio z list.append i del list[i], mam racje?"""
-
 class Task:
-    """Nowa klasa na potrzeby nauki"""
     def __init__(self, id, name, state):
        self.id = id
        self.name = name
        self.state = state
 
-    def __add__(self, skl):
-        return Task(self.id + skl, self.name, self.state)
 
-    def __sub__(self, skl):
-        return Task(self.id - skl, self.name, self.state)
-
-    def lista_obiektow(ile):
+class TaskService:
+    def __init__(self, ile_taskow):
+        """Inicjalizacja TaskService - tworzy listę obiektow TaskService.lista_taskow(ile_taskow)"""
         lista = []
-        for i in range(ile):
-            y = str(i + 1)
+        for i in range(ile_taskow):
             y = Task(i, "Obiekt " + str(i + 1), True)
             lista.append(y)
-        return lista
+        self.lista_taskow = lista
 
-    def findByID(lista, id):
-        for i in range(len(lista)):
-            if lista[i].id == id:
-                return lista[i]
-            else:
-                print("Brak obiektu o takim ID")
+    def __add__(self, obiekt):
+        """Dodaj do TaskService.lista_taskow obiekt"""
+        self.lista_taskow.append(obiekt)
 
-    def toggle(self):
-        if self.state == True:
-            self.state = False
-        elif self.state == False:
-            self.state = True
+    def __sub__(self, obiekt):
+        """Usuń z TaskService.lista_taskow obiekt"""
+        self.lista_taskow.remove(obiekt)
 
+    def findByID(lista_taskow, id):
+        """Zwraca z listy TaskService.lista_taskow obiekt Task o podanym id"""
+        for i in range(len(lista_taskow)):
+            if lista_taskow[i].id == id:
+                return lista_taskow[i]
 
-x = Task.lista_obiektow(ile=5)
+    def toggle(self, id):
+        """zmienia state obiektu Task na liscie TaskService.lista_taskow na przeciwny"""
+        TaskService.findByID(self.lista_taskow, id).state = not TaskService.findByID(self.lista_taskow, id).state
 
-f = Task.findByID(x, 0)
-print(f)
-print(f.id, f.name, f.state)
+x = TaskService(7)
+print("Find by ID " + str(TaskService.findByID(x.lista_taskow, 2)))
+new = Task(23, "ALBERT", False)
+print("new " + str(new))
 
-f = f + 1
-print(f.id, f.name, f.state)
+print("")
 
-f = f-10
-print(f.id, f.name, f.state)
+x + new
+print(x.lista_taskow[-1].id)
+print(x.lista_taskow[-1].state)
+x.toggle(x.lista_taskow[-1].id)
+print(x.lista_taskow[-1].state)
 
-Task.toggle(f)
-print(f.id, f.name, f.state)
+print("")
 
-
+print(x.lista_taskow)
+x-new
+print(x.lista_taskow)
 
 
 
