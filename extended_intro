@@ -1,0 +1,182 @@
+"""Dodałem kilka metod do sprawniejszego poruszania się po taskach i TaskServicie. 
+Czesc z nich zapewne za bardzo rozbudowana, ale działa i dzięki temu mogłem sobie potestować różne rozwiązania.
+Dodałem również tego sqlite, i w podstawowym zakresie to jest insertowanie i wczytywanie bazy - działa.
+Aczkolwiek zaczytaną bazę i jej rekordy pewnie by trzeba było jeszcze zamienić na obiekty, ale to już nie dziś.
+
+Pod sekcją definicji, w komentarzach, jest parę linijek kodu, którymi testowałem sobie działanie.
+PS. wiem, że troche spaghetti :D"""
+
+class Task:
+    def __init__(self, id, name, state = False):
+       self.id = id
+       self.name = name
+       self.state = state
+#toggle do  taska
+    def toggle(self):
+        self.state = not self.state
+
+    def change_name(self, name):
+        self.name = name
+
+    def create_tasks_list(liczba):
+        lista = []
+        licznik = 1
+        for i in range(liczba):
+            task = input("Treść task " + str(licznik) + ": ")
+            if bool(task) == True: i = Task(i, task)
+            else: i = Task(i, "Obiekt " + str(licznik))
+            lista.append(i)
+            licznik+=1
+        return lista
+
+    def show_parameters(self):
+        return [self.id, self.name, self.state]
+
+
+class TaskService:
+    def __init__(self, lista = None):
+        self.lista_taskow = []
+        if lista != None and type(lista) == list:
+            self.lista_taskow += lista
+
+    def save(self, *args):
+        for element in args:
+            if type(element) is list:
+                self.lista_taskow += element
+            else:
+                self.lista_taskow.append(element)
+
+    def delete(self, *args):
+        for element in args:
+            self.lista_taskow.remove(self.findByID(element.id))
+
+    def findByID(self, id):
+        """Zwraca z listy TaskService.lista_taskow obiekt Task o podanym id"""
+        for i in range(len(self.lista_taskow)):
+            if self.lista_taskow[i].id == id:
+                return self.lista_taskow[i]
+
+    def unfinished_tasks(self):
+        return [(i) for i in self.lista_taskow if i.state == False]
+
+    def testing_tool(self, operacja = 0):
+        if operacja == 0:
+            lista = []
+            for i in self.lista_taskow:
+                lista.append(i.show_parameters())
+            return lista
+
+        elif operacja == "state":
+            self.testing_tool()
+
+            while True:
+                wybor = input("Podaj id taska do zmiany state: ")
+                if wybor == "quit" or wybor == "QUIT":
+                    break
+                self.findByID(int(wybor)).toggle()
+
+        elif operacja == "name":
+            self.testing_tool()
+            while True:
+                wybor = input("Podaj id taska do zmiany name: ")
+                if wybor == "quit" or wybor == "QUIT":
+                    break
+                self.findByID(int(wybor)).change_name(input("Nowa nazwa to: "))
+
+    def konwertowanie_listy_na_string_dla_bazy(self):
+            task_values = "({id}, '{name}', {state})"
+            values = ""
+
+            def convert_state(state):
+                if state == False:
+                    return 0
+                elif state == True:
+                    return 1
+
+            for i in self.lista_taskow:
+                if i == self.lista_taskow[len(self.lista_taskow) - 1]:
+                    values += " " + task_values.format(id=i.id, name=i.name, state=convert_state(i.state)) + ";\n"
+                    break
+                values += " " + task_values.format(id=i.id, name=i.name, state=convert_state(i.state)) + ",\n"
+            return values
+
+
+
+
+#sqlite
+
+import sqlite3
+from sqlite3 import Error
+
+def create_connection(path):
+    connection = None
+    try:
+        connection = sqlite3.connect(path)
+        print("Succeed")
+    except Error as e:
+        print(f"error '{e}' occured")
+
+    return connection
+
+def create_tasks_table(katalog):
+    return """
+    CREATE TABLE IF NOT EXISTS Tasks (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    state INTEGER
+    );
+    """
+
+def execute_query(connection, query):
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query)
+        connection.commit()
+        print("Succeed")
+    except Error as e:
+        print(f"The error '{e}' occured")
+
+def insert_task_to_db(obiekt):
+    create_tasks = """
+    INSERT INTO Tasks (id, name, state)
+    VALUES
+    """ + obiekt.konwertowanie_listy_na_string_dla_bazy()
+    print(create_tasks)
+    return create_tasks
+
+
+def execute_read_query(connection, query):
+    cursor = connection.cursor()
+    result = None
+    try:
+        cursor.execute(query)
+        result = cursor.fetchall()
+        return result
+    except Error as e:
+        print(f"The error '{e}' occurred")
+
+def read_db(wersja):
+    connection = create_connection("C:\\Users\\Daniel\\Documents\\Programowanie\\Task\\tasks_db{}.sqlite".format(str(wersja)))
+    select_tasks = "SELECT * FROM Tasks"
+    TASKS = execute_read_query(connection, select_tasks)
+    print(TASKS)
+    return TASKS
+
+
+Tasks = TaskService(Task.create_tasks_list(4))
+#print(Tasks.lista_taskow)
+#print(Tasks.testing_tool(0))
+#Tasks.testing_tool("state")
+#Tasks.testing_tool("name")
+#to_do = []
+#to_do += [element.show_parameters() for element in Tasks.unfinished_tasks()]
+#print("Tasks\n" + str(Tasks.testing_tool(operacja=0)))
+#print("to_do\n" + str(to_do))
+
+#connection = create_connection("C:\\Users\\Daniel\\Documents\\Programowanie\\Task\\tasks_db1.sqlite")
+#execute_query(connection, create_tasks_table("C:\\Users\\Daniel\\Documents\\Programowanie\\Task\\tasks_db1.sqlite"))
+#execute_query(connection, insert_task_to_db(Tasks))
+#baza = read_db(1)
+
+
+
