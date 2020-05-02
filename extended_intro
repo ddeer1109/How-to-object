@@ -4,14 +4,15 @@ Dodałem również tego sqlite, i w podstawowym zakresie to jest insertowanie i 
 Aczkolwiek zaczytaną bazę i jej rekordy pewnie by trzeba było jeszcze zamienić na obiekty, ale to już nie dziś.
 
 Pod sekcją definicji, w komentarzach, jest parę linijek kodu, którymi testowałem sobie działanie.
-PS. wiem, że troche spaghetti :D"""
+PS. wiem, że troche spaghetti :D
+AD1. Odbugowane w paru miejscach, teraz powinno być bezawaryjnie całkiem"""
 
 class Task:
     def __init__(self, id, name, state = False):
        self.id = id
        self.name = name
        self.state = state
-#toggle do  taska
+
     def toggle(self):
         self.state = not self.state
 
@@ -20,7 +21,7 @@ class Task:
 
     def create_tasks_list(liczba):
         lista = []
-        licznik = 1
+        licznik = 0
         for i in range(liczba):
             task = input("Treść task " + str(licznik) + ": ")
             if bool(task) == True: i = Task(i, task)
@@ -70,7 +71,7 @@ class TaskService:
             self.testing_tool()
 
             while True:
-                wybor = input("Podaj id taska do zmiany state: ")
+                wybor = input("Podaj id taska do zmiany state, quit, żeby zakończyć: ")
                 if wybor == "quit" or wybor == "QUIT":
                     break
                 self.findByID(int(wybor)).toggle()
@@ -83,25 +84,32 @@ class TaskService:
                     break
                 self.findByID(int(wybor)).change_name(input("Nowa nazwa to: "))
 
-    def konwertowanie_listy_na_string_dla_bazy(self):
-            task_values = "({id}, '{name}', {state})"
-            values = ""
-
+    def konwertowanie_listy_na_string_dla_bazy(self, unfinished = 0):
             def convert_state(state):
                 if state == False:
                     return 0
                 elif state == True:
                     return 1
 
-            for i in self.lista_taskow:
-                if i == self.lista_taskow[len(self.lista_taskow) - 1]:
+            task_values = "({id}, '{name}', {state})"
+            values = ""
+
+            if unfinished == 0:
+                lista = self.lista_taskow
+            else:
+                lista = self.unfinished_tasks()
+            for i in lista:
+                if i == lista[len(lista) - 1]:
                     values += " " + task_values.format(id=i.id, name=i.name, state=convert_state(i.state)) + ";\n"
                     break
                 values += " " + task_values.format(id=i.id, name=i.name, state=convert_state(i.state)) + ",\n"
             return values
 
-
-
+    def insert_task_to_db(self, undone = 0):
+        create_tasks = """INSERT INTO Tasks (id, name, state) VALUES
+        """ + self.konwertowanie_listy_na_string_dla_bazy(undone)
+        print(create_tasks)
+        return create_tasks
 
 #sqlite
 
@@ -136,15 +144,6 @@ def execute_query(connection, query):
     except Error as e:
         print(f"The error '{e}' occured")
 
-def insert_task_to_db(obiekt):
-    create_tasks = """
-    INSERT INTO Tasks (id, name, state)
-    VALUES
-    """ + obiekt.konwertowanie_listy_na_string_dla_bazy()
-    print(create_tasks)
-    return create_tasks
-
-
 def execute_read_query(connection, query):
     cursor = connection.cursor()
     result = None
@@ -162,8 +161,12 @@ def read_db(wersja):
     print(TASKS)
     return TASKS
 
+def convert_db_to_TasksList(db_output):
+    tasks_list = []
+    for element in db_output:
+        tasks_list.append(Task(element[0], element[1], bool(element[2])))
+    return tasks_list
 
-Tasks = TaskService(Task.create_tasks_list(4))
 #print(Tasks.lista_taskow)
 #print(Tasks.testing_tool(0))
 #Tasks.testing_tool("state")
@@ -173,10 +176,26 @@ Tasks = TaskService(Task.create_tasks_list(4))
 #print("Tasks\n" + str(Tasks.testing_tool(operacja=0)))
 #print("to_do\n" + str(to_do))
 
-#connection = create_connection("C:\\Users\\Daniel\\Documents\\Programowanie\\Task\\tasks_db1.sqlite")
-#execute_query(connection, create_tasks_table("C:\\Users\\Daniel\\Documents\\Programowanie\\Task\\tasks_db1.sqlite"))
-#execute_query(connection, insert_task_to_db(Tasks))
-#baza = read_db(1)
+Tasks = TaskService(Task.create_tasks_list(6))
+Tasks.testing_tool('state')
+
+connection = create_connection("C:\\Users\\Daniel\\Documents\\Programowanie\\Task\\tasks_db77.sqlite")
+connection_undone = create_connection("C:\\Users\\Daniel\\Documents\\Programowanie\\Task\\tasks_db77undone.sqlite")
+
+execute_query(connection, create_tasks_table("C:\\Users\\Daniel\\Documents\\Programowanie\\Task\\tasks_db77.sqlite"))
+execute_query(connection_undone, create_tasks_table("C:\\Users\\Daniel\\Documents\\Programowanie\\Task\\tasks_db77undone.sqlite"))
+
+execute_query(connection, Tasks.insert_task_to_db())
+execute_query(connection_undone, Tasks.insert_task_to_db(undone=1))
+
+#x = TaskService(Task.create_tasks_list(2))
+#print(x.lista_taskow)
+#baza = read_db(77)
+#x.save(convert_db_to_TasksList(baza))
+#print(x.lista_taskow)
+
+
+
 
 
 
